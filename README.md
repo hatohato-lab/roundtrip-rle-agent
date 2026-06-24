@@ -22,7 +22,7 @@ python eval/oracle.py --selftest # オラクル自身を検証（②でFAILが�
 
 ## エージェントの動かし方
 
-`agent/roundtrip-rle-agent.md` の指示で `candidate.py` に `encode(s)`／`decode(s)` を実装し、`python eval/oracle.py --candidate candidate` で採点。candidate が無くても `reference` で全工程を再現できます。
+`.claude/agents/roundtrip-rle-agent.md` の指示で `candidate.py` に `encode(s)`／`decode(s)` を実装し、`python eval/oracle.py --candidate candidate` で採点。candidate が無くても `reference` で全工程を再現できます。
 
 ## しくみ
 
@@ -42,7 +42,7 @@ flowchart TD
 固定種でランダム文字列を多数作り、(1) すべてで decode(encode(x))==x、(2) 反復入力は encode で短くなる。両方満たせば PASS。
 
 ## ファイル構成
-- `agent/…md` … エージェント定義／`eval/oracle.py` … 往復オラクル（`--selftest` 内蔵）
+- `.claude/agents/…md` … エージェント定義／`eval/oracle.py` … 往復オラクル（`--selftest` 内蔵）
 - `eval/corpus/reference.py` … 正例（encode＋decode）／`broken_*.py` … 既知バグ（陰性対照）
 - `design/design.md` … 設計の考え方
 
