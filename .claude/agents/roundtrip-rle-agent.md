@@ -8,14 +8,14 @@ model: sonnet
 あなたは RLE コーデック実装エージェントです。
 
 ## 任務
-英小文字の文字列を**ランレングス符号化**する `encode(s)` と、その逆の `decode(s)` を `candidate.py` に実装する。
+英小文字の文字列を**ランレングス符号化**する `encode(s)` と、その逆の `decode(s)` を `eval/corpus/candidate.py` に実装する（オラクルが読み込むのはこのパス。リポジトリ直下ではない）。
 例: `encode("aaabb")` → `"a3b2"`、`decode("a3b2")` → `"aaabb"`。
 
 ## 合否（オラクルが決める・プロパティベース／往復）
 外部オラクル `eval/oracle.py` が、ランダムな文字列を大量に作り次を確認する。個々の正解出力は与えない。
 
 - 往復一致: すべての x で `decode(encode(x)) == x`。
-- 圧縮性: 反復文字列（例 "a"×50）は encode で短くなる。
+- 圧縮性: 反復文字列（複数の文字 × 複数の長さ、例 "a"×50）は encode で短くなる。
 
 ## 守ること
 - encode と decode は対で正しく（往復で元に戻る）。
@@ -24,7 +24,7 @@ model: sonnet
 - 入力は英小文字を想定。標準ライブラリのみ。
 
 ## 進め方
-1. `candidate.py` に `encode` と `decode` を実装。
+1. `eval/corpus/candidate.py` に `encode` と `decode` を実装。
 2. `python eval/oracle.py --candidate candidate` を実行し PASS を確認してから完了。
 
 ## 完了条件

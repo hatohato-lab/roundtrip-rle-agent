@@ -35,6 +35,12 @@ N = 4000        # ランダム入力の本数
 SEED = 12345    # 種固定（再現可能）
 ALPHA = "abcde"  # 小さめの英字 → 長い連続（2桁の個数）が出やすい
 
+# 圧縮性チェックの点（文字 × 長さ ＝ 計12点）。
+# 1点だけだと「その入力だけ特別扱いし、他は恒等変換」する実装が PASS してしまうため、
+# 複数の文字（ランダム生成の ALPHA 外である k・z も含む）× 複数の長さで確かめる。
+COMPRESS_CHARS = "abkz"
+COMPRESS_LENS = (10, 26, 50)
+
 # 手で選んだ際どい入力（空・単一・2桁の連続など）
 SEED_CASES = ["", "a", "aa", "ab", "aaab", "abc", "a" * 20, "aabbccdd", "abababab", "a" * 12]
 
@@ -68,12 +74,16 @@ def evaluate(encode, decode):
             return ("FAIL", f"例外: 入力 {x!r} → {type(e).__name__}: {e}")
         if z != x:
             return ("FAIL", f"往復不一致: x={x!r} → encode={y!r} → decode={z!r}")
-    # (2) 圧縮性: 反復入力は短くなる（恒等変換のごまかしを弾く）
-    big = "a" * 50
-    enc_big = encode(big)
-    if not (isinstance(enc_big, str) and len(enc_big) < len(big)):
-        return ("FAIL", f"反復入力が圧縮されない（恒等変換の疑い）: len(encode('a'*50))={len(enc_big)} ≥ 50")
-    return ("PASS", f"往復一致 {len(SEED_CASES)}+{N} 件 ＋ 反復入力を圧縮（decode(encode(x))==x）")
+    # (2) 圧縮性: 反復入力は短くなる（恒等変換のごまかしを弾く）。全点で確認する。
+    checked = 0
+    for ch in COMPRESS_CHARS:
+        for n in COMPRESS_LENS:
+            enc_big = encode(ch * n)
+            if not (isinstance(enc_big, str) and len(enc_big) < n):
+                got = len(enc_big) if hasattr(enc_big, "__len__") else repr(enc_big)
+                return ("FAIL", f"反復入力が圧縮されない（恒等変換の疑い）: len(encode({ch!r}*{n}))={got} ≥ {n}")
+            checked += 1
+    return ("PASS", f"往復一致 {len(SEED_CASES)}+{N} 件 ＋ 反復入力 {checked} 点を圧縮（decode(encode(x))==x）")
 
 
 def grade(path):

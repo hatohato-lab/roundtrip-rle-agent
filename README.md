@@ -1,6 +1,11 @@
 # roundtrip-rle-agent
 
+*A run-length encoding (RLE) agent graded by a property-based round-trip oracle: `decode(encode(x)) == x` over thousands of random inputs, plus multi-point compressibility checks.*
+*No hand-written expected outputs — and the oracle validates itself against known-broken implementations (negative controls).*
+
 文字列を**ランレングス符号化**する `encode`／`decode` を実装するエージェントと、**「変換して戻すと元に戻る」性質で判定する**オラクル（採点プログラム）。
+
+専門用語を使わない説明は [説明書.md](説明書.md) にあります。
 
 ## 概要
 
@@ -22,7 +27,7 @@ python eval/oracle.py --selftest # オラクル自身を検証（②でFAILが�
 
 ## エージェントの動かし方
 
-`.claude/agents/roundtrip-rle-agent.md` の指示で `candidate.py` に `encode(s)`／`decode(s)` を実装し、`python eval/oracle.py --candidate candidate` で採点。candidate が無くても `reference` で全工程を再現できます。
+`.claude/agents/roundtrip-rle-agent.md` の指示で `eval/corpus/candidate.py` に `encode(s)`／`decode(s)` を実装し、`python eval/oracle.py --candidate candidate` で採点。candidate が無くても `reference` で全工程を再現できます。
 
 ## しくみ
 
@@ -39,7 +44,7 @@ flowchart TD
 ```
 
 ## 合否（eval）
-固定種でランダム文字列を多数作り、(1) すべてで decode(encode(x))==x、(2) 反復入力は encode で短くなる。両方満たせば PASS。
+固定種でランダム文字列を多数作り、(1) すべてで decode(encode(x))==x、(2) 反復入力（複数の文字 × 複数の長さ、計12点）は encode で短くなる。両方満たせば PASS。
 
 ## ファイル構成
 - `.claude/agents/…md` … エージェント定義／`eval/oracle.py` … 往復オラクル（`--selftest` 内蔵）
