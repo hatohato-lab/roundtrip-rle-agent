@@ -6,7 +6,7 @@ oracle.py — プロパティベース（往復 / round-trip）オラクル。
 個々の出力の正解は用意せず、入力に対して常に成り立つべき**性質**で判定する。
 候補 encode / decode について、ランダムな文字列を大量に作り:
   (1) 往復一致 : すべての x で decode(encode(x)) == x。
-  (2) 圧縮性  : 反復文字列は encode で短くなる（恒等変換のごまかし防止）。
+  (2) 圧縮性  : 反復文字列は encode で短くなり（恒等変換のごまかし防止）、かつ decode で元に戻る。
 を確かめる。種を固定するので再現可能。
 
 使い方:
@@ -41,8 +41,10 @@ ALPHA = "abcde"  # 小さめの英字 → 長い連続（2桁の個数）が出�
 COMPRESS_CHARS = "abkz"
 COMPRESS_LENS = (10, 26, 50)
 
-# 手で選んだ際どい入力（空・単一・2桁の連続など）
-SEED_CASES = ["", "a", "aa", "ab", "aaab", "abc", "a" * 20, "aabbccdd", "abababab", "a" * 12]
+# 手で選んだ際どい入力（空・単一・2桁の連続など）＋ 英小文字26字の単文字と ALPHA 外の長い反復（境界）。
+# ランダム生成は ALPHA=abcde の範囲しか出さないので、f〜z は決定的な入力で必ず往復を確かめる。
+SEED_CASES = ["", "a", "aa", "ab", "aaab", "abc", "a" * 20, "aabbccdd", "abababab", "a" * 12] \
+    + list("abcdefghijklmnopqrstuvwxyz") + ["k" * 26, "z" * 50]
 
 
 def gen_strings(n):
@@ -75,15 +77,24 @@ def evaluate(encode, decode):
         if z != x:
             return ("FAIL", f"往復不一致: x={x!r} → encode={y!r} → decode={z!r}")
     # (2) 圧縮性: 反復入力は短くなる（恒等変換のごまかしを弾く）。全点で確認する。
+    #     短くなるだけでなく decode で元に戻ることも同時に確かめる。ここで使う k・z は往復検査の
+    #     ランダム入力（ALPHA=abcde）には出ないため、復号を見ないと「z の復号だけ壊れた実装」を見逃す。
     checked = 0
     for ch in COMPRESS_CHARS:
         for n in COMPRESS_LENS:
-            enc_big = encode(ch * n)
+            x = ch * n
+            enc_big = encode(x)
             if not (isinstance(enc_big, str) and len(enc_big) < n):
                 got = len(enc_big) if hasattr(enc_big, "__len__") else repr(enc_big)
                 return ("FAIL", f"反復入力が圧縮されない（恒等変換の疑い）: len(encode({ch!r}*{n}))={got} ≥ {n}")
+            try:
+                back = decode(enc_big)
+            except Exception as e:
+                return ("FAIL", f"例外: 圧縮検査の復号 decode(encode({ch!r}*{n})) → {type(e).__name__}: {e}")
+            if back != x:
+                return ("FAIL", f"圧縮検査の復号不一致: x={ch!r}*{n} → encode={enc_big!r} → decode={back!r}")
             checked += 1
-    return ("PASS", f"往復一致 {len(SEED_CASES)}+{N} 件 ＋ 反復入力 {checked} 点を圧縮（decode(encode(x))==x）")
+    return ("PASS", f"往復一致 {len(SEED_CASES)}+{N} 件 ＋ 反復入力 {checked} 点を圧縮し復号一致（decode(encode(x))==x）")
 
 
 def grade(path):
@@ -113,6 +124,7 @@ def selftest():
         ("broken_encode.py", "個数が1ずれる → 往復不一致"),
         ("broken_decode.py", "個数を1桁しか読まない → 2桁の連続で破綻"),
         ("broken_identity.py", "encode=decode=恒等 → 往復は通るが圧縮しない"),
+        ("broken_decode_z.py", "z を含む符号列だけ復号が空になる → 圧縮検査で復号を見ないと見逃す"),
     ]
     brows, caught = [], True
     for f, why in controls:
